@@ -1,264 +1,343 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'package:fl_chart/fl_chart.dart';
-import 'package:intl/intl.dart';
+import 'booking_page.dart';
+import 'product_page.dart';
+import '../services/hairstyle_service.dart';
 
 class HomePage extends StatefulWidget {
+  const HomePage({super.key});
+
   @override
   State<HomePage> createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
-  int total = 0;
-  int revenue = 0;
-  List pie = [];
-
-  DateTime? startDate;
-  DateTime? endDate;
-
-  bool loading = true;
-
-  int touchedIndex = -1; // 🔥 index slice yg di klik
-
-  @override
-  void initState() {
-    super.initState();
-    loadData();
-  }
-
-  int toInt(dynamic v) => int.tryParse(v.toString()) ?? 0;
-
-  double getTotalPie() {
-    double t = 0;
-    for (var p in pie) {
-      t += toInt(p['total']);
-    }
-    return t;
-  }
-
-  Future<void> loadData() async {
-    setState(() => loading = true);
-
-    String url = "http://127.0.0.1/barber_api/dashboard_filter.php";
-
-    if (startDate != null && endDate != null) {
-      String s = DateFormat('yyyy-MM-dd').format(startDate!);
-      String e = DateFormat('yyyy-MM-dd').format(endDate!);
-      url += "?start=$s&end=$e";
-    }
-
-    try {
-      var res = await http.get(Uri.parse(url));
-      var data = jsonDecode(res.body);
-
-      setState(() {
-        total = toInt(data['total']);
-        revenue = toInt(data['revenue']);
-        pie = data['pie'] ?? [];
-        loading = false;
-      });
-    } catch (e) {
-      print("ERROR: $e");
-      setState(() => loading = false);
-    }
-  }
-
-  Future pickDate() async {
-    DateTimeRange? range = await showDateRangePicker(
-      context: context,
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2030),
-    );
-
-    if (range != null) {
-      startDate = range.start;
-      endDate = range.end;
-      loadData();
-    }
-  }
-
-  Color getColor(int i) {
-    List<Color> colors = [
-      Colors.amber,
-      Colors.blue,
-      Colors.green,
-      Colors.red,
-      Colors.purple,
-      Colors.orange,
-    ];
-    return colors[i % colors.length];
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
-
-      appBar: AppBar(
-        title: Text("Dashboard"),
-        backgroundColor: Colors.black,
-        actions: [
-          IconButton(
-            icon: Icon(Icons.date_range, color: Colors.amber),
-            onPressed: pickDate,
-          ),
-        ],
-      ),
-
-      body: loading
-          ? Center(child: CircularProgressIndicator())
-          : ListView(
-              padding: EdgeInsets.all(16),
-              children: [
-                Text(
-                  "Statistik",
-                  style: TextStyle(color: Colors.white, fontSize: 20),
+      backgroundColor: const Color(0xFF121212),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // --- HEADER ---
+              const Text(
+                "SISTEM AKTIF / 08:42 AM",
+                style: TextStyle(
+                  color: Colors.grey,
+                  fontSize: 10,
+                  letterSpacing: 1.5,
                 ),
+              ),
+              const SizedBox(height: 5),
+              const Text(
+                "HALO, ENDRU",
+                style: TextStyle(
+                  color: Color(0xFFE5C07B),
+                  fontSize: 24,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.2,
+                ),
+              ),
+              const SizedBox(height: 25),
 
-                SizedBox(height: 20),
-
-                Row(
+              // --- BANNER PROMO ---
+              Container(
+                width: double.infinity,
+                height: 140,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF2A2A2A), Color(0xFF1A1A1A)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.white12),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    stat("Total", total),
-                    SizedBox(width: 10),
-                    stat("Revenue", revenue),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      color: const Color(0xFFE5C07B),
+                      child: const Text(
+                        "PROMO TERBATAS",
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    const Text(
+                      "DISKON 30% VIP\nTREATMENT",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        height: 1.2,
+                      ),
+                    ),
                   ],
                 ),
+              ),
+              const SizedBox(height: 20),
 
-                SizedBox(height: 20),
+              // --- MENU BUTTONS ---
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildMenuCard(
+                      title: "KATALOG GAYA",
+                      subtitle: "PILIH KARAKTERMU",
+                      icon: Icons.style,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => BookingPage()),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 15),
+                  Expanded(
+                    child: _buildMenuCard(
+                      title: "TOKO PRODUK",
+                      subtitle: "AMUNISI PERAWATAN",
+                      icon: Icons.shopping_bag,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => ProductPage()),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 35),
 
-                // 🔥 PIE INTERAKTIF
-                Container(
-                  height: 300,
-                  padding: EdgeInsets.all(16),
-                  decoration: box(),
-                  child: pie.isEmpty
-                      ? Center(
-                          child: Text(
-                            "No Data",
-                            style: TextStyle(color: Colors.grey),
-                          ),
-                        )
-                      : Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            PieChart(
-                              PieChartData(
-                                pieTouchData: PieTouchData(
-                                  touchCallback: (event, response) {
-                                    setState(() {
-                                      if (!event.isInterestedForInteractions ||
-                                          response == null ||
-                                          response.touchedSection == null) {
-                                        touchedIndex = -1;
-                                        return;
-                                      }
-                                      touchedIndex = response
-                                          .touchedSection!
-                                          .touchedSectionIndex;
-                                    });
-                                  },
-                                ),
+              // --- GAYA RAMBUT POPULER ---
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: const [
+                  Text(
+                    "GAYA RAMBUT POPULER",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    "LIHAT SEMUA",
+                    style: TextStyle(
+                      color: Color(0xFFE5C07B),
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 15),
 
-                                sectionsSpace: 2,
-                                centerSpaceRadius: 60,
-
-                                sections: List.generate(pie.length, (i) {
-                                  final isTouched = i == touchedIndex;
-                                  final value = toInt(
-                                    pie[i]['total'],
-                                  ).toDouble();
-                                  final percent = getTotalPie() == 0
-                                      ? 0
-                                      : (value / getTotalPie() * 100);
-
-                                  return PieChartSectionData(
-                                    color: getColor(i),
-                                    value: value,
-                                    title: "${percent.toStringAsFixed(1)}%",
-                                    radius: isTouched ? 85 : 70,
-                                    titleStyle: TextStyle(
-                                      fontSize: isTouched ? 14 : 12,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                    ),
-                                  );
-                                }),
-                              ),
-                              swapAnimationDuration: Duration(
-                                milliseconds: 800,
-                              ),
-                              swapAnimationCurve: Curves.easeInOut,
-                            ),
-
-                            // 🔥 CENTER INFO
-                            Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  touchedIndex == -1
-                                      ? "Total"
-                                      : pie[touchedIndex]['service'],
-                                  style: TextStyle(color: Colors.grey),
-                                ),
-                                SizedBox(height: 6),
-                                Text(
-                                  touchedIndex == -1
-                                      ? total.toString()
-                                      : pie[touchedIndex]['total'].toString(),
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 18,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                ),
-
-                SizedBox(height: 20),
-
-                // 🔥 LEGEND
-                Wrap(
-                  spacing: 10,
-                  children: List.generate(pie.length, (i) {
-                    return Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(width: 10, height: 10, color: getColor(i)),
-                        SizedBox(width: 5),
-                        Text(
-                          pie[i]['service'],
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ],
+              // FETCH DATA GAYA RAMBUT DARI DATABASE
+              FutureBuilder<List<dynamic>>(
+                future: HairstyleService.getHairstyles(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const SizedBox(
+                      height: 220,
+                      child: Center(
+                        child: CircularProgressIndicator(color: Colors.amber),
+                      ),
                     );
-                  }),
+                  }
+                  if (snapshot.hasError) {
+                    return const SizedBox(
+                      height: 220,
+                      child: Center(
+                        child: Text(
+                          "Gagal memuat data",
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                      ),
+                    );
+                  }
+                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                    return const SizedBox(
+                      height: 220,
+                      child: Center(
+                        child: Text(
+                          "Belum ada gaya rambut",
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                      ),
+                    );
+                  }
+
+                  var hairstyles = snapshot.data!;
+                  return SizedBox(
+                    height: 220,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: hairstyles.length,
+                      itemBuilder: (context, index) {
+                        return _buildHairstyleCard(hairstyles[index]);
+                      },
+                    ),
+                  );
+                },
+              ),
+
+              const SizedBox(height: 35),
+
+              // --- LAYANAN REKOMENDASI ---
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: const [
+                  Text(
+                    "LAYANAN\nREKOMENDASI",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      height: 1.2,
+                    ),
+                  ),
+                  Text(
+                    "BERDASARKAN\nRIWAYAT",
+                    textAlign: TextAlign.right,
+                    style: TextStyle(
+                      color: Colors.grey,
+                      fontSize: 10,
+                      height: 1.2,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 15),
+
+              // KOTAK ISI LAYANAN REKOMENDASI
+              Container(
+                padding: const EdgeInsets.all(15),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E1E1E),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.white10),
                 ),
-              ],
-            ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.black,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.content_cut,
+                        color: Colors.amber,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 15),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Premium Haircut",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            "Sesuai dengan riwayat bulan lalu",
+                            style: TextStyle(color: Colors.grey, fontSize: 10),
+                          ),
+                        ],
+                      ),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => BookingPage()),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.amber,
+                        minimumSize: const Size(60, 30),
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                      ),
+                      child: const Text(
+                        "BOOKING",
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(
+                height: 30,
+              ), // Spasi bawah agar bisa di-scroll dengan nyaman
+            ],
+          ),
+        ),
+      ),
     );
   }
 
-  Widget stat(String title, int value) {
-    return Expanded(
+  Widget _buildMenuCard({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
       child: Container(
-        padding: EdgeInsets.all(16),
-        decoration: box(),
+        padding: const EdgeInsets.all(15),
+        decoration: BoxDecoration(
+          color: const Color(0xFF222222),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: Colors.white10),
+        ),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: TextStyle(color: Colors.grey)),
-            SizedBox(height: 10),
+            Icon(icon, color: Colors.white, size: 28),
+            const SizedBox(height: 15),
             Text(
-              title == "Revenue"
-                  ? "Rp ${NumberFormat('#,###').format(value)}"
-                  : value.toString(),
-              style: TextStyle(
-                color: Colors.amber,
+              title,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
                 fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              subtitle,
+              style: const TextStyle(
+                color: Colors.grey,
+                fontSize: 8,
+                letterSpacing: 0.5,
               ),
             ),
           ],
@@ -267,10 +346,71 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  BoxDecoration box() {
-    return BoxDecoration(
-      color: Color(0xFF1C1C1C),
-      borderRadius: BorderRadius.circular(16),
+  Widget _buildHairstyleCard(Map<String, dynamic> data) {
+    return Container(
+      width: 160,
+      margin: const EdgeInsets.only(right: 15),
+      decoration: BoxDecoration(
+        color: const Color(0xFF222222),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFF333333),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(10),
+                ),
+                image: data['image'] != null
+                    ? DecorationImage(
+                        image: NetworkImage(data['image']),
+                        fit: BoxFit.cover,
+                      )
+                    : null,
+              ),
+              child: data['image'] == null
+                  ? const Center(
+                      child: Icon(Icons.image, color: Colors.grey, size: 40),
+                    )
+                  : null,
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        data['name'] ?? "Style",
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      const Text(
+                        "Premium Cut",
+                        style: TextStyle(color: Colors.grey, fontSize: 8),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.bookmark_border, color: Colors.grey, size: 16),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

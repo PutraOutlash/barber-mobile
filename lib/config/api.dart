@@ -1,3 +1,3 @@
 class Api {
-  static const String baseUrl = "http://localhost/barber_api/";
+  static String baseUrl = "http://localhost/barber_api";
 }

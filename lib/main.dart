@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'screens/login_page.dart';
+import 'package:barber_app/screens/login_page.dart'; // Import halaman login
 
+// PINTU MASUK UTAMA FLUTTER
 void main() {
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -13,8 +13,9 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(textTheme: GoogleFonts.poppinsTextTheme()),
-      home: LoginPage(),
+      title: 'Barber App',
+      // Setelah aplikasi buka, arahkan langsung ke halaman Login
+      home: const LoginPage(),
     );
   }
 }
