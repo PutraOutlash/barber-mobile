@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:async'; // 🔥 Wajib di-import untuk fitur Timer Jam
 import 'booking_page.dart';
 import 'product_page.dart';
 import '../services/hairstyle_service.dart';
@@ -11,6 +13,59 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  // Variabel penampung data dinamis
+  String userName = "MEMUAT...";
+  String currentTime = "SISTEM AKTIF / --:--";
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+    _updateTime(); // Panggil jam saat pertama kali buka
+
+    // 🔥 Mesin Jam: Perbarui waktu setiap 1 menit
+    _timer = Timer.periodic(const Duration(minutes: 1), (timer) {
+      _updateTime();
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel(); // Matikan jam saat pindah halaman agar hemat RAM
+    super.dispose();
+  }
+
+  // --- FUNGSI AMBIL NAMA DARI MEMORI HP ---
+  Future<void> _loadUserData() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      // Mengambil nama dan langsung mengubahnya menjadi HURUF KAPITAL semua
+      String rawName = prefs.getString("user_name") ?? "GUEST";
+      userName = rawName.toUpperCase();
+    });
+  }
+
+  // --- FUNGSI JAM REAL-TIME ---
+  void _updateTime() {
+    final now = DateTime.now();
+    int hour = now.hour;
+    int minute = now.minute;
+    String ampm = hour >= 12 ? 'PM' : 'AM';
+
+    hour = hour % 12;
+    hour = hour == 0 ? 12 : hour; // Format 12 jam (ubah 00 jadi 12)
+
+    String hrStr = hour.toString().padLeft(2, '0');
+    String minStr = minute.toString().padLeft(2, '0');
+
+    if (mounted) {
+      setState(() {
+        currentTime = "SISTEM AKTIF / $hrStr:$minStr $ampm";
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -21,19 +76,19 @@ class _HomePageState extends State<HomePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // --- HEADER ---
-              const Text(
-                "SISTEM AKTIF / 08:42 AM",
-                style: TextStyle(
+              // --- HEADER DINAMIS ---
+              Text(
+                currentTime, // 🔥 Jam Real-time
+                style: const TextStyle(
                   color: Colors.grey,
                   fontSize: 10,
                   letterSpacing: 1.5,
                 ),
               ),
               const SizedBox(height: 5),
-              const Text(
-                "HALO, ENDRU",
-                style: TextStyle(
+              Text(
+                "HALO, $userName", // 🔥 Nama User Asli
+                style: const TextStyle(
                   color: Color(0xFFE5C07B),
                   fontSize: 24,
                   fontWeight: FontWeight.w900,
@@ -101,7 +156,9 @@ class _HomePageState extends State<HomePage> {
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (_) => BookingPage()),
+                          MaterialPageRoute(
+                            builder: (_) => const BookingPage(),
+                          ),
                         );
                       },
                     ),
@@ -115,7 +172,9 @@ class _HomePageState extends State<HomePage> {
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (_) => ProductPage()),
+                          MaterialPageRoute(
+                            builder: (_) => const ProductPage(),
+                          ),
                         );
                       },
                     ),
@@ -272,7 +331,9 @@ class _HomePageState extends State<HomePage> {
                       onPressed: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (_) => BookingPage()),
+                          MaterialPageRoute(
+                            builder: (_) => const BookingPage(),
+                          ),
                         );
                       },
                       style: ElevatedButton.styleFrom(
@@ -292,9 +353,7 @@ class _HomePageState extends State<HomePage> {
                   ],
                 ),
               ),
-              const SizedBox(
-                height: 30,
-              ), // Spasi bawah agar bisa di-scroll dengan nyaman
+              const SizedBox(height: 30),
             ],
           ),
         ),
